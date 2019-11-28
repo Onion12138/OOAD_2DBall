@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head lang="en">
+    <meta charset="UTF_8">
+    <title></title>
+</head> 
+<style>
+    .wrap{
+        margin:0 auto;
+        width:80%;
+    }
+    #left{
+        width:800px;
+        height:800px;
+        background: #ccffff;
+        float: left;
+    }
+    #right{
+        height: 800px;
+        background: white;
+        margin-left:100px;
+        border-left: 100px;
+    }
+</style>
+<body>
+    <section id="left">
+    <canvas id="canvas" style="border: 1px solid"></canvas>
+    </section>
+    <script src="canvas.js">
+    </script> 
+    </section>
+    <aside id="right">
+    <div>组件栏</div>
+    <form action="" method="GET">
+    <label><input name="component" type="radio" value="images" checked="true"></label>
+    <img src="../img/images.png" height="50px" width="50px">
+    <label><input name="component" type="radio" value="absorber"></label>
+    <img src="../img/absorber.png" height="50px" width="50px">
+    </br>
+    <label><input name="component" type="radio" value="ball"></label>
+    <img src="../img/ball.png" height="50px" width="50px">
+    <label><input name="component" type="radio" value="circle"></label>
+    <img src="../img/circle.png" height="50px" width="50px">
+    </br>
+    <input name="component" type="radio" value="square">
+    <img src="../img/square.png" height="50px" width="50px">
+    <input name="component" type="radio" value="triangle">
+    <img src="../img/triangle0.png" height="50px" width="50px">
+    </br>
+    <input name="component" type="radio" value="rail">
+    <img src="../img/rail0.png" height="50px" width="50px">
+    <input name="component" type="radio" value="curve">
+    <img src="../img/curve0.png" height="50px" width="50px">
+    </br>
+    <input name="component" type="radio" value="paddle-left">
+    <img src="../img/paddle-left.png" height="50px" width="50px">
+    <input name="component" type="radio" value="paddle-right">
+    <img src="../img/paddle-right.png" height="50px" width="50px">
+    <br>
+    <div>操作栏</div>
+    <input type="radio" name="component" value="rotation">
+    <img src="../img/rotation.png" height="50px" width="50px">
+    <input type="radio" name="component" value="delete">
+    <img src="../img/delete.png" height="50px" width="50px">
+    </br>
+    <input type="radio" name="component" value="plus">
+    <img src="../img/plus.png" height="50px" width="50px">
+    <input type="radio" name="component" value="minus">
+    <img src="../img/minus.png" height="50px" width="50px">
+    </br>
+    </form>
+    <button id="design" autofocus=true>设计模式</button>
+    <br>
+    <button id="play">游戏模式</button>
+    <br>
+    <button id="file">文件模式</button>
+    <br>
+    <input type="file">上传文件
+    </aside>
+</body>
+</html>
