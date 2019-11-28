@@ -1,18 +1,3 @@
-// import absorber_path from  "./constant" 
-// import ball_path from "./constant.js"
-// import circle_path from "./constant.js"
-// import rectangle_path from "./constant.js"
-// import triangle_path from "./constant.js"
-// import rail_path from "./constant.js"
-// import curve_path from "./constant.js"
-// import left_paddle_path from "./constant.js"
-// import right_paddle_path from "./constant.js"
-// import click_path from "./constant.js"
-// import rotate from "./constant.js"
-// import remove from "./constant.js"
-// import enlarge from "./constant.js"
-// import shrink from "./constant.js"
-// import triangle from "./triangle.js"
 class Triangle{
     constructor(x, y, scale, name, id){
         this.x = x;
@@ -57,6 +42,14 @@ class Triangle{
         this.dir = (this.dir + 1)%4;
         this.updatePoints();
     }
+    scaleUp(){
+        this.scale ++;
+        this.updatePoints();
+    }
+    scaleDown(){
+        this.scale --;
+        this.updatePoints();
+    }
     project(axis){
         let scalars = [];
         this.points.forEach(point =>{
@@ -65,83 +58,27 @@ class Triangle{
         return new Projection(Math.min.apply(Math, scalars), Math.max.apply(Math, scalars));
     }
     getAxes(){
-        // let v1 = new Vector();
-        // let v2 = new Vector();
-        // let axes = [];
-        // for(let i=0;i < this.points.length-1; i++){
-        //     v1.x = this.points[i].x;
-        //     v1.y = this.points[i].y;
-        //     v2.x = this.points[i+1].x;
-        //     v2.y = this.points[i+1].y;
-        //     axes.push(v1.edge(v2).normal());
-        // }
-        // v1.x = this.points[this.points.length-1].x;
-        // v1.y = this.points[this.points.length-1].y;
-        // v2.x = this.points[0].x;
-        // v2.y = this.points[0].y;
-        // axes.push(v1.edge(v2).normal());
-        // return axes;
         let axes = [];
         if(this.dir === 0 || this.dir === 2){
-            axes.push(new Vector(Math.sqrt(2), Math.sqrt(2)));
+            axes.push(new Vector(Math.sqrt(2)/2, Math.sqrt(2)/2));
             axes.push(new Vector(0, 1));
             axes.push(new Vector(1, 0));
             return axes;
         }
         if(this.dir === 1 || this.dir === 3){
-            axes.push(new Vector(Math.sqrt(2), -Math.sqrt(2)))
+            axes.push(new Vector(Math.sqrt(2)/2, -Math.sqrt(2)/2))
             axes.push(new Vector(0, 1));
             axes.push(new Vector(1, 0));
             return axes; 
         }
-        
     }
-    getClosestToBall(ball){
-        let min = 10000;
-        let closePoint;
-        for(let i=0;i < this.points.length; i++){
-            let testPoint = this.points[i];
-            let len = Math.sqrt(Math.pow(testPoint.x - ball.x - ball.scale * 20, 2) + Math.pow(testPoint.y - ball.y - ball.scale * 20, 2));
-            if(len < min){
-                min = len;
-                closePoint = testPoint;
-            }
-        }
-        return closePoint;
-    }
-    collidesWith(ball){
-        let closePoint = this.getClosestToBall(ball);
-        let axes = this.getAxes();
-        let v1 = new Vector(ball.x + ball.scale * 20, ball.y + ball.scale * 20);
-        let v2 = new Vector(closePoint.x, closePoint.y);
-        axes.push(v1.substract(v2).normalize());
-        return this.separationOnAxes(axes, ball).axis !== undefined;
-    }
-    separationOnAxes(axes, ball){
-        let minOverlap = 10000;
-        let axisWithMinOverlap;
-        for(let i=0;i<axes.length;i++){
-            let axis = axes[i];
-            projection1 = this.project(axis);
-            projection2 = ball.project(axis);
-            if(! projection1.overlaps(projection2)){
-                return {axis: undefined, overlap: 0};
-            }else{
-                if(overlap < minOverlap){
-                    minOverlap = overlap;
-                    axisWithMinOverlap = axis;
-                }
-            }
-        }
-        return {axis: axisWithMinOverlap, overlap: minOverlap};
-    }
-    handleCollision(mtv, ball){
+    handleCollision(ball){
+        let mtv = separationOnAxes(this, ball);
         if(mtv.axis !== undefined){
-            let p = mtv.axis.perpendicular();
-            let len = p.getMagnitude();
+            let p = mtv.axis.normalize();
             let vec = new Vector(ball.vx, ball.vy);
-            ball.vx = p.x * (2 * vec.dot(p) / Math.pow(len, 2)) - vec.x;
-            ball.vy = p.y * (2 * vec.dot(p) / Math.pow(len, 2)) - vec.y;
+            ball.vx = vec.x - p.x * (2 * vec.dot(p));
+            ball.vy = vec.y - p.y * (2 * vec.dot(p));
         }
     }
 }
@@ -161,6 +98,14 @@ class Square{
     isRotatable(){
         return false;
     }
+    scaleUp(){
+        this.scale ++;
+        this.updatePoints();
+    }
+    scaleDown(){
+        this.scale --;
+        this.updatePoints();
+    }
     project(axis){
         let scalars = [];
         this.points.forEach(point =>{
@@ -176,22 +121,6 @@ class Square{
         this.points.push(new Vector(this.x + this.scale * 40, this.y));
     }
     getAxes(){
-        // let v1 = new Vector();
-        // let v2 = new Vector();
-        // let axes = [];
-        // for(let i=0;i < this.points.length-1; i++){
-        //     v1.x = this.points[i].x;
-        //     v1.y = this.points[i].y;
-        //     v2.x = this.points[i+1].x;
-        //     v2.y = this.points[i+1].y;
-        //     axes.push(v1.edge(v2).normal());
-        // }
-        // v1.x = this.points[this.points.length-1].x;
-        // v1.y = this.points[this.points.length-1].y;
-        // v2.x = this.points[0].x;
-        // v2.y = this.points[0].y;
-        // axes.push(v1.edge(v2).normal());
-        // return axes;
         let axes = [];
         axes.push(new Vector(1,0));
         axes.push(new Vector(0,1));
@@ -203,48 +132,16 @@ class Square{
         let v1 = new Vector(ball.x + 20, ball.y + 20);
         let v2 = new Vector(closePoint.x, closePoint.y);
         axes.push(v1.substract(v2).normalize());
-        return this.separationOnAxes(axes, ball).axis === undefined;
+        return this.separationOnAxes(axes, ball).axis !== undefined;
     }
-    separationOnAxes(axes, ball){
-        let minOverlap = 10000;
-        let axisWithMinOverlap;
-        for(let i=0;i<axes.length;i++){
-            let axis = axes[i];
-            let projection1 = this.project(axis);
-            let projection2 = ball.project(axis);
-            let overlap = projection1.overlaps(projection2);
-            if(overlap === 0){
-                return {axis: undefined, overlap: 0};
-            }else{
-                if(overlap < minOverlap){
-                    minOverlap = overlap;
-                    axisWithMinOverlap = axis;
-                }
-            }
-        }
-        return {axis: axisWithMinOverlap, overlap: minOverlap};
-    }
-    handleCollision(mtv, ball){
+    handleCollision(ball){
+        let mtv = separationOnAxes(this, ball);
         if(mtv.axis !== undefined){
-            let p = mtv.axis.perpendicular();
-            let len = p.getMagnitude();
+            let p = mtv.axis.normalize();
             let vec = new Vector(ball.vx, ball.vy);
-            ball.vx = p.x * (2 * vec.dot(p) / Math.pow(len, 2)) - vec.x;
-            ball.vy = p.y * (2 * vec.dot(p) / Math.pow(len, 2)) - vec.y;
+            ball.vx = vec.x - p.x * (2 * vec.dot(p));
+            ball.vy = vec.y - p.y * (2 * vec.dot(p));
         }
-    }
-    getClosestToBall(ball){
-        let min = Number.MAX_VALUE;
-        let closePoint;
-        for(let i=0;i < this.points.length; i++){
-            let testPoint = this.points[i];
-            let len = Math.sqrt(Math.pow(testPoint.x - ball.x - 20, 2) + Math.pow(testPoint.y - ball.y - 20, 2));
-            if(len < min){
-                min = len;
-                closePoint = testPoint;
-            }
-        }
-        return closePoint;
     }
 }
 class Circle{
@@ -258,12 +155,14 @@ class Circle{
     isScaleable(){
         return true;
     }
+    scaleUp(){
+        this.scale ++;
+    }
+    scaleDown(){
+        this.scale --;
+    }
     isRotatable(){
         return false;
-    }
-    collidesWith(ball){
-        let distance = Math.sqrt(Math.pow(ball.x - this.x, 2) + Math.pow(ball.y - this.y, 2));
-        return distance < Math.abs(this.scale * 20 + ball.scale * 20);
     }
     handleCollision(ball){
         ball.vx = -ball.vx;
@@ -289,6 +188,8 @@ class Absorber{
     handleCollision(ball){
         ball.vx = 0;
         ball.vy = 0;
+        ball.x = this.x;
+        ball.y = this.y;
     }
     updatePoints(){
         this.points = [];
@@ -297,50 +198,18 @@ class Absorber{
         this.points.push(new Vector(this.x, this.y + 40));
         this.points.push(new Vector(this.x + 40, this.y));
     }
+    project(axis){
+        let scalars = [];
+        this.points.forEach(point =>{
+            scalars.push(point.dot(axis));
+        })
+        return new Projection(Math.min.apply(Math, scalars), Math.max.apply(Math, scalars));
+    }
     getAxes(){
         let axes = [];
         axes.push(new Vector(1,0));
         axes.push(new Vector(0,1));
         return axes;
-    }
-    collidesWith(ball){
-        let closePoint = this.getClosestToBall(ball);
-        let axes = this.getAxes();
-        let v1 = new Vector(ball.x + ball.scale * 20, ball.y + ball.scale * 20);
-        let v2 = new Vector(closePoint.x, closePoint.y);
-        axes.push(v1.substract(v2).normalize());
-        return this.separationOnAxes(axes, ball).axis === undefined;
-    }
-    separationOnAxes(axes, ball){
-        let minOverlap = 10000;
-        let axisWithMinOverlap;
-        for(let i=0;i<axes.length;i++){
-            let axis = axes[i];
-            projection1 = this.project(axis);
-            projection2 = ball.project(axis);
-            if(! projection1.overlaps(projection2)){
-                return {axis: undefined, overlap: 0};
-            }else{
-                if(overlap < minOverlap){
-                    minOverlap = overlap;
-                    axisWithMinOverlap = axis;
-                }
-            }
-        }
-        return {axis: axisWithMinOverlap, overlap: minOverlap};
-    }
-    getClosestToBall(ball){
-        let min = 10000;
-        let closePoint;
-        for(let i=0;i < this.points.length; i++){
-            let testPoint = this.points[i];
-            let len = Math.sqrt(Math.pow(testPoint.x - ball.x - ball.scale * 20, 2) + Math.pow(testPoint.y - ball.y - ball.scale * 20, 2));
-            if(len < min){
-                min = len;
-                closePoint = testPoint;
-            }
-        }
-        return closePoint;
     }
 }
 class Ball{
@@ -394,59 +263,29 @@ class Rail{
         this.points.push(new Vector(this.x, this.y + 40));
         this.points.push(new Vector(this.x + 40, this.y)); 
     }
+    project(axis){
+        let scalars = [];
+        this.points.forEach(point =>{
+            scalars.push(point.dot(axis));
+        })
+        return new Projection(Math.min.apply(Math, scalars), Math.max.apply(Math, scalars));
+    }
     getAxes(){
         let axes = [];
         axes.push(new Vector(1,0));
         axes.push(new Vector(0,1));
         return axes;
     }
-    collidesWith(ball){
-        let closePoint = this.getClosestToBall(ball);
-        let axes = this.getAxes();
-        let v1 = new Vector(ball.x + ball.scale * 20, ball.y + ball.scale * 20);
-        let v2 = new Vector(closePoint.x, closePoint.y);
-        axes.push(v1.substract(v2).normalize());
-        return this.separationOnAxes(axes, ball).axis === undefined;
-    }
-    separationOnAxes(axes, ball){
-        let minOverlap = 10000;
-        let axisWithMinOverlap;
-        for(let i=0;i<axes.length;i++){
-            let axis = axes[i];
-            projection1 = this.project(axis);
-            projection2 = ball.project(axis);
-            if(! projection1.overlaps(projection2)){
-                return {axis: undefined, overlap: 0};
-            }else{
-                if(overlap < minOverlap){
-                    minOverlap = overlap;
-                    axisWithMinOverlap = axis;
-                }
-            }
-        }
-        return {axis: axisWithMinOverlap, overlap: minOverlap};
-    }
     handleCollision(ball){
-        //dir === 0, horizontal
+        //dir === 0, vertical
         if(this.dir === 0){
-            ball.vy = 0;
+            ball.vx = 0;
+            ball.x = this.x;
         }
         if(this.dir === 1){
-            ball.vx = 0;
+            ball.vy = 0;
+            ball.y = this.y;
         }
-    }
-    getClosestToBall(ball){
-        let min = 10000;
-        let closePoint;
-        for(let i=0;i < this.points.length; i++){
-            let testPoint = this.points[i];
-            let len = Math.sqrt(Math.pow(testPoint.x - ball.x - ball.scale * 20, 2) + Math.pow(testPoint.y - ball.y - ball.scale * 20, 2));
-            if(len < min){
-                min = len;
-                closePoint = testPoint;
-            }
-        }
-        return closePoint;
     }
 }
 class Curve{
@@ -477,113 +316,97 @@ class Curve{
         this.points.push(new Vector(this.x, this.y + 40));
         this.points.push(new Vector(this.x + 40, this.y)); 
     }
+    project(axis){
+        let scalars = [];
+        this.points.forEach(point =>{
+            scalars.push(point.dot(axis));
+        })
+        return new Projection(Math.min.apply(Math, scalars), Math.max.apply(Math, scalars));
+    }
     getAxes(){
         let axes = [];
         axes.push(new Vector(1,0));
         axes.push(new Vector(0,1));
         return axes;
     }
-    collidesWith(ball){
-        let closePoint = this.getClosestToBall(ball);
-        let axes = this.getAxes();
-        let v1 = new Vector(ball.x + ball.scale * 20, ball.y + ball.scale * 20);
-        let v2 = new Vector(closePoint.x, closePoint.y);
-        axes.push(v1.substract(v2).normalize());
-        return this.separationOnAxes(axes, ball).axis === undefined;
-    }
-    separationOnAxes(axes, ball){
-        let minOverlap = 10000;
-        let axisWithMinOverlap;
-        for(let i=0;i<axes.length;i++){
-            let axis = axes[i];
-            projection1 = this.project(axis);
-            projection2 = ball.project(axis);
-            if(! projection1.overlaps(projection2)){
-                return {axis: undefined, overlap: 0};
-            }else{
-                if(overlap < minOverlap){
-                    minOverlap = overlap;
-                    axisWithMinOverlap = axis;
-                }
-            }
-        }
-        return {axis: axisWithMinOverlap, overlap: minOverlap};
-    }
     handleCollision(ball){
+        let p;
+        if(this.dir == 0){
+            p = new Vector(-1, -1);
+        }
+        if(this.dir == 1){
+            p = new Vector(1, -1);
+        }
+        if(this.dir == 2){
+            p = new Vector(1, 1);
+        }
+        if(this.dir == 3){
+            p = new Vector(-1, 1);
+        }
+        let vec = new Vector(ball.vx, ball.vy);
+        ball.vx = vec.x - p.x * (2 * vec.dot(p));
+        ball.vy = vec.y - p.y * (2 * vec.dot(p));
         //dir === 0, /
-        if(this.dir === 0){
-            if((ball.vx == 0 && ball.vy > 0) || (ball.vy == 0 && ball.vx > 0)){
-                ball.vx = -ball.vy;
-                ball.vy = -ball.vx;
-            }
-            else{
-                if(Math.random()>0.5){
-                    ball.vy = -2;
-                    ball.vx = 0;
-                }else{
-                    ball.vx = -2;
-                    ball.vy = 0;
-                }
-            }
-        }
-        if(this.dir === 1){
-            if((ball.vx == 0 && ball.vy > 0) || (ball.vy == 0 && ball.vx < 0)){
-                ball.vx = ball.vy;
-                ball.vy = ball.vx;
-            }
-            else{
-                if(Math.random()>0.5){
-                    ball.vy = -2;
-                    ball.vx = 0;
-                }else{
-                    ball.vx = 2;
-                    ball.vy = 0;
-                }
-            }
-        }
-        if(this.dir === 2){
-            if((ball.vx == 0 && ball.vy < 0) || (ball.vy == 0 && ball.vx < 0)){
-                ball.vx = -ball.vy;
-                ball.vy = -ball.vx;
-            }
-            else{
-                if(Math.random()>0.5){
-                    ball.vy = 2;
-                    ball.vx = 0;
-                }else{
-                    ball.vx = 2;
-                    ball.vy = 0;
-                }
-            }
-        }
-        if(this.dir === 3){
-            if((ball.vx == 0 && ball.vy < 0) || (ball.vy == 0 && ball.vx > 0)){
-                ball.vx = ball.vy;
-                ball.vy = ball.vx;
-            }
-            else{
-                if(Math.random()>0.5){
-                    ball.vy = 2;
-                    ball.vx = 0;
-                }else{
-                    ball.vx = -2;
-                    ball.vy = 0;
-                }
-            }
-        }
-    }
-    getClosestToBall(ball){
-        let min = 10000;
-        let closePoint;
-        for(let i=0;i < this.points.length; i++){
-            let testPoint = this.points[i];
-            let len = Math.sqrt(Math.pow(testPoint.x - ball.x - ball.scale * 20, 2) + Math.pow(testPoint.y - ball.y - ball.scale * 20, 2));
-            if(len < min){
-                min = len;
-                closePoint = testPoint;
-            }
-        }
-        return closePoint;
+        // if(this.dir === 0){
+        //     if((ball.vx == 0 && ball.vy > 0) || (ball.vy == 0 && ball.vx > 0)){
+        //         ball.vx = -ball.vy;
+        //         ball.vy = -ball.vx;
+        //     }
+        //     else{
+        //         if(random>0.5){
+        //             ball.vy = -1;
+        //             ball.vx = 0;
+        //         }else{
+        //             ball.vx = -1;
+        //             ball.vy = 0;
+        //         }
+        //     }
+        // }
+        // if(this.dir === 1){
+        //     if((ball.vx == 0 && ball.vy > 0) || (ball.vy == 0 && ball.vx < 0)){
+        //         ball.vx = ball.vy;
+        //         ball.vy = ball.vx;
+        //     }
+        //     else{
+        //         if(random>0.5){
+        //             ball.vy = -1;
+        //             ball.vx = 0;
+        //         }else{
+        //             ball.vx = 2;
+        //             ball.vy = 0;
+        //         }
+        //     }
+        // }
+        // if(this.dir === 2){
+        //     if((ball.vx == 0 && ball.vy < 0) || (ball.vy == 0 && ball.vx < 0)){
+        //         ball.vx = -ball.vy;
+        //         ball.vy = -ball.vx;
+        //     }
+        //     else{
+        //         if(random>0.5){
+        //             ball.vy = 1;
+        //             ball.vx = 0;
+        //         }else{
+        //             ball.vx = 1;
+        //             ball.vy = 0;
+        //         }
+        //     }
+        // }
+        // if(this.dir === 3){
+        //     if((ball.vx == 0 && ball.vy < 0) || (ball.vy == 0 && ball.vx > 0)){
+        //         ball.vx = ball.vy;
+        //         ball.vy = ball.vx;
+        //     }
+        //     else{
+        //         if(random>0.5){
+        //             ball.vy = 1;
+        //             ball.vx = 0;
+        //         }else{
+        //             ball.vx = -1;
+        //             ball.vy = 0;
+        //         }
+        //     }
+        // }
     }
 }
 class LeftPaddle{
@@ -609,50 +432,27 @@ class LeftPaddle{
         this.points.push(new Vector(this.x, this.y + 10));
         this.points.push(new Vector(this.x + 40, this.y)); 
     }
+    project(axis){
+        let scalars = [];
+        this.points.forEach(point =>{
+            scalars.push(point.dot(axis));
+        })
+        return new Projection(Math.min.apply(Math, scalars), Math.max.apply(Math, scalars));
+    }
     getAxes(){
         let axes = [];
         axes.push(new Vector(1,0));
         axes.push(new Vector(0,1));
         return axes;
     }
-    collidesWith(ball){
-        let closePoint = this.getClosestToBall(ball);
-        let axes = this.getAxes();
-        let v1 = new Vector(ball.x + ball.scale * 20, ball.y + ball.scale * 20);
-        let v2 = new Vector(closePoint.x, closePoint.y);
-        axes.push(v1.substract(v2).normalize());
-        return this.separationOnAxes(axes, ball).axis === undefined;
-    }
-    separationOnAxes(axes, ball){
-        let minOverlap = 10000;
-        let axisWithMinOverlap;
-        for(let i=0;i<axes.length;i++){
-            let axis = axes[i];
-            projection1 = this.project(axis);
-            projection2 = ball.project(axis);
-            if(! projection1.overlaps(projection2)){
-                return {axis: undefined, overlap: 0};
-            }else{
-                if(overlap < minOverlap){
-                    minOverlap = overlap;
-                    axisWithMinOverlap = axis;
-                }
-            }
+    handleCollision(ball){
+        let mtv = separationOnAxes(this, ball);
+        if(mtv.axis !== undefined){
+            let p = mtv.axis.normalize();
+            let vec = new Vector(ball.vx, ball.vy);
+            ball.vx = vec.x - p.x * (2 * vec.dot(p));
+            ball.vy = vec.y - p.y * (2 * vec.dot(p));
         }
-        return {axis: axisWithMinOverlap, overlap: minOverlap};
-    }
-    getClosestToBall(ball){
-        let min = 10000;
-        let closePoint;
-        for(let i=0;i < this.points.length; i++){
-            let testPoint = this.points[i];
-            let len = Math.sqrt(Math.pow(testPoint.x - ball.x - ball.scale * 20, 2) + Math.pow(testPoint.y - ball.y - ball.scale * 20, 2));
-            if(len < min){
-                min = len;
-                closePoint = testPoint;
-            }
-        }
-        return closePoint;
     }
 }
 class RightPaddle{
@@ -678,51 +478,29 @@ class RightPaddle{
         this.points.push(new Vector(this.x, this.y + 10));
         this.points.push(new Vector(this.x + 40, this.y)); 
     }
+    project(axis){
+        let scalars = [];
+        this.points.forEach(point =>{
+            scalars.push(point.dot(axis));
+        })
+        return new Projection(Math.min.apply(Math, scalars), Math.max.apply(Math, scalars));
+    }
     getAxes(){
         let axes = [];
         axes.push(new Vector(1,0));
         axes.push(new Vector(0,1));
         return axes;
     }
-    collidesWith(ball){
-        let closePoint = this.getClosestToBall(ball);
-        let axes = this.getAxes();
-        let v1 = new Vector(ball.x + ball.scale * 20, ball.y + ball.scale * 20);
-        let v2 = new Vector(closePoint.x, closePoint.y);
-        axes.push(v1.substract(v2).normalize());
-        return this.separationOnAxes(axes, ball).axis === undefined;
-    }
-    separationOnAxes(axes, ball){
-        let minOverlap = 10000;
-        let axisWithMinOverlap;
-        for(let i=0;i<axes.length;i++){
-            let axis = axes[i];
-            projection1 = this.project(axis);
-            projection2 = ball.project(axis);
-            if(! projection1.overlaps(projection2)){
-                return {axis: undefined, overlap: 0};
-            }else{
-                if(overlap < minOverlap){
-                    minOverlap = overlap;
-                    axisWithMinOverlap = axis;
-                }
-            }
+    handleCollision(ball){
+        let mtv = separationOnAxes(this, ball);
+        if(mtv.axis !== undefined){
+            let p = mtv.axis.normalize();
+            let vec = new Vector(ball.vx, ball.vy);
+            ball.vx = vec.x - p.x * (2 * vec.dot(p));
+            ball.vy = vec.y - p.y * (2 * vec.dot(p));
         }
-        return {axis: axisWithMinOverlap, overlap: minOverlap};
     }
-    getClosestToBall(ball){
-        let min = 10000;
-        let closePoint;
-        for(let i=0;i < this.points.length; i++){
-            let testPoint = this.points[i];
-            let len = Math.sqrt(Math.pow(testPoint.x - ball.x - ball.scale * 20, 2) + Math.pow(testPoint.y - ball.y - ball.scale * 20, 2));
-            if(len < min){
-                min = len;
-                closePoint = testPoint;
-            }
-        }
-        return closePoint;
-    }
+    
 }
 class Vector{
     constructor(x, y){
@@ -777,13 +555,24 @@ class Projection{
         }
     }
 }
+class Mtv{
+    constructor(axis, overlap){
+        this.axis = axis;
+        this.overlap = overlap;
+    }
+}
 let canvas = document.getElementById("canvas");
 let context = canvas.getContext('2d');
+// let bufferCanvas = document.createElement("canvas");
+// bufferCanvas.width = 800;
+// bufferCanvas.height = 800;
+// let bufferContext = bufferCanvas.getContext('2d');
 let componentList = new Array();
 let positionOccupied = new Array(400).fill(-1);
 let count = 0;
-let gravity = 2;
+let gravity = 1;
 let ball;
+let random;
 function newObject(name, x, y){
     if(name == "triangle"){
         count++;
@@ -843,6 +632,52 @@ function newObject(name, x, y){
             return new RightPaddle(x, y, name, count);
         }
     }
+}
+function collisionDetect(component, ball){
+    if(component.name === "circle"){
+        let distance = Math.sqrt(Math.pow(component.x - ball.x, 2) + Math.pow(component.y - ball.y, 2));
+        let overlap = component.scale * 20 + ball.scale * 20 - distance;
+        console.log(overlap);
+        return overlap < 0 ? new Mtv(undefined, 0) : (undefined, overlap);
+    }else{
+        return separationOnAxes(component, ball);
+    }
+}
+function separationOnAxes(component, ball){
+    let axes = component.getAxes();
+    let closePoint = getClosestToBall(component, ball);
+    let vec = new Vector(closePoint.x - ball.x, closePoint.y - ball.y);
+    axes.push(vec.normalize());
+    let minOverlap = Number.MAX_VALUE;
+    let axisWithMinOverlap;
+    for(let i=0;i<axes.length;i++){
+        let axis = axes[i];
+        let projection1 = component.project(axis);
+        let projection2 = ball.project(axis);
+        let overlap = projection1.overlaps(projection2);
+        if(overlap === 0){
+            return {axis: undefined, overlap: 0};
+        }else{
+            if(overlap < minOverlap){
+                minOverlap = overlap;
+                axisWithMinOverlap = axis;
+            }
+        }
+    }
+    return {axis: axisWithMinOverlap, overlap: minOverlap};
+}
+function getClosestToBall(component, ball){
+    let min = Number.MAX_VALUE;
+    let closePoint;
+    for(let i=0;i < component.points.length; i++){
+        let testPoint = component.points[i];
+        let len = Math.sqrt(Math.pow(testPoint.x - ball.x - 20, 2) + Math.pow(testPoint.y - ball.y - 20, 2));
+        if(len < min){
+            min = len;
+            closePoint = testPoint;
+        }
+    }
+    return closePoint;
 }
 function windowToCanvas(x, y){
     var bbox = canvas.getBoundingClientRect();
@@ -959,7 +794,7 @@ function enlarge(id){
     }
     context.clearRect(0, 0, 800, 800);
     let old_scale = component.scale;
-    component.scale ++;
+    component.scaleUp();
     let flag = true;
     for(let i=component.x;i<component.x+component.scale*40;i+=40){
         for(let j=component.y;j<component.y+component.scale*40;j+=40){
@@ -975,7 +810,7 @@ function enlarge(id){
         }
     }
     if(!flag){
-        component.scale --;
+        component.scaleDown();
     }else{
         for(let i=component.x;i<component.x+component.scale*40;i+=40){
             for(let j=component.y;j<component.y+component.scale*40;j+=40){
@@ -998,7 +833,7 @@ function shrink(id){
     }
     context.clearRect(0, 0, 800, 800);
     let old_scale = component.scale;
-    component.scale --;
+    component.scaleDown();
     for(let i=component.x;i<component.x+old_scale*40;i+=40){
         for(let j=component.y;j<component.y+old_scale*40;j+=40){
             if(i < component.x + component.scale * 40 && j < component.y + component.scale * 40){
@@ -1010,10 +845,42 @@ function shrink(id){
     }
     rerender();
 }
+function handleWallCollision(ball){
+    let p;
+    if(ball.x + ball.vx >= 800){
+        p = new Vector(-1, 0);
+    }else if(ball.y + ball.vy >= 800){
+        p = new Vector(0, -1);
+    }else if(ball.x + ball.vx < 0){
+        p = new Vector(1, 0);
+    }else if(ball.y + ball.vy < 0){
+        p = new Vector(0, 1);
+    }else{
+        return;
+    }
+    let vec = new Vector(ball.vx, ball.vy);
+    ball.vx = vec.x - p.x * (2 * vec.dot(p));
+    ball.vy = vec.y - p.y * (2 * vec.dot(p));
+}
 function update(ball){
+    handleWallCollision(ball);
+    let x_int = parseInt(ball.x/40);
+    let y_int = parseInt(ball.y/40);
+    if(positionOccupied[x_int*20+y_int] !== -1){
+        let id = positionOccupied[x_int*20+y_int];
+        let component = componentList.find(item => item.id === id);
+        if(component !== undefined){
+            if(component.name === "rail" || component.name === "curve"){
+                ball.x += ball.vx;
+                ball.y += ball.vy;
+                return;
+            }
+        }
+    }
     ball.x += ball.vx;
     ball.y += ball.vy;
     ball.vy += gravity;
+    ball.vx += Math.random();
 }
 function rerender(){
     drawGrid();
@@ -1042,43 +909,139 @@ function rerender(){
             context.drawImage(image, ball.x, ball.y, 40, 40);
         }
     }
-}
-function repaintBall(x, y){
-    context.clearRect(x, y, 40, 40);
-    drawGrid(); 
-}
-function render(ball, old_x, old_y){
-    repaintBall(old_x, old_y);
-    let image = new Image();
-    image.src = "../img/ball.png";
-    image.onload = function(){
-        context.drawImage(image, ball.x, ball.y, 40, 40);
-    } 
+    // context.drawImage(bufferCanvas, 0, 0);
+    // bufferContext.clearRect(0, 0, 800, 800);
 }
 function timer(){
-    let old_x = ball.x;
-    let old_y = ball.y;
     for(let i = 0; i < componentList.length; i++){
-        if(componentList[i].collidesWith(ball)){
-            console.log("collide with " + componentList[i].name);
+        if(collisionDetect(componentList[i], ball).overlap !== 0){
             componentList[i].handleCollision(ball);
+            console.log(componentList[i]);
+            break;
         }
     }
     update(ball);
-    render(ball, old_x, old_y);
+    context.clearRect(0, 0, 800, 800);
+    rerender();
+}
+function rightMoveLeftPaddle(){
+    let paddle = componentList.find(item => item.name === "paddle-left");
+    if( paddle === undefined){
+        return;
+    }
+    if(paddle.x === 800){
+        return;
+    }
+    if(positionOccupied[(paddle.x/40+1)*20 + paddle.y/40] != -1){
+        return;
+    }
+    positionOccupied[paddle.x/40*20+paddle.y/40] = -1;
+    paddle.x += 40;
+    paddle.updatePoints();
+    positionOccupied[paddle.x/40*20+paddle.y/40] = paddle.id;
+    context.clearRect(0, 0, 800, 800);
+    rerender();
+}
+function leftMoveLeftPaddle(){
+    let paddle = componentList.find(item => item.name === "paddle-left");
+    if( paddle === undefined){
+        return;
+    }
+    if(paddle.x === 0){
+        return;
+    }
+    if(positionOccupied[(paddle.x/40-1)*20 + paddle.y/40] != -1){
+        return;
+    }
+    positionOccupied[paddle.x/40*20+paddle.y/40] = -1;
+    paddle.x -= 40;
+    paddle.updatePoints();
+    positionOccupied[paddle.x/40*20+paddle.y/40] = paddle.id;
+    context.clearRect(0, 0, 800, 800);
+    rerender();
+}
+function leftMoveRightPaddle(){
+    let paddle = componentList.find(item => item.name === "paddle-right");
+    if( paddle === undefined){
+        return;
+    }
+    if(paddle.x === 0){
+        return;
+    }
+    if(positionOccupied[(paddle.x/40-1)*20 + paddle.y/40] != -1){
+        return;
+    }
+    positionOccupied[paddle.x/40*20+paddle.y/40] = -1;
+    paddle.x -= 40;
+    paddle.updatePoints();
+    positionOccupied[paddle.x/40*20+paddle.y/40] = paddle.id;
+    context.clearRect(0, 0, 800, 800);
+    rerender();
+}
+function rightMoveRightPaddle(){
+    let paddle = componentList.find(item => item.name === "paddle-right");
+    if( paddle === undefined){
+        return;
+    }
+    if(paddle.x === 800){
+        return;
+    }
+    if(positionOccupied[(paddle.x/40+1)*20 + paddle.y/40] != -1){
+        return;
+    }
+    positionOccupied[paddle.x/40*20+paddle.y/40] = -1;
+    paddle.x += 40;
+    paddle.updatePoints();
+    positionOccupied[paddle.x/40*20+paddle.y/40] = paddle.id;
+    context.clearRect(0, 0, 800, 800);
+    rerender();
+}
+function doKeyDown(e){
+    e.preventDefault();
+    if(e.key === 'a'){
+        leftMoveLeftPaddle();
+    }
+    if(e.key === 'd'){
+        rightMoveLeftPaddle();
+    }
+    if(e.key === 'ArrowLeft'){
+        leftMoveRightPaddle();
+    }
+    if(e.key === 'ArrowRight'){
+        rightMoveRightPaddle();
+    }
 }
 window.onload = function(){
     let playButton = document.getElementById("play");
     let designButton = document.getElementById("design");
+    let fileSaveButton = document.getElementById("save");
+    let fileLoadButton = document.getElementById("load");
     let method;
     playButton.onclick = function play(){
         if(ball !== undefined){
-            method = setInterval(timer,50);
+            positionOccupied[ball.x/40*20+ball.y/40] = -1;
+            random = Math.random();
+            method = setInterval(timer,100);
         }
     }
     designButton.onclick = function design(){
         clearInterval(method);
     }
+    fileSaveButton.onclick = function save(){
+        let component = JSON.stringify(componentList);
+        let position = JSON.stringify(positionOccupied);
+        localStorage.setItem("component", component);
+        localStorage.setItem("position", position);
+    }
+    fileLoadButton.onclick = function load(){
+        let list = JSON.parse(localStorage.getItem("component"));
+        for(let i = 0; i < list.length; i ++){
+            componentList.push(newObject(list[i].name, list[i].x, list[i].y));
+        }
+        positionOccupied = JSON.parse(localStorage.getItem("position"));
+        rerender();
+    }
+    window.addEventListener('keydown', doKeyDown,true);
     canvas.onmousedown = function(e){
         e.preventDefault();
         let point = windowToCanvas(e.clientX, e.clientY);
@@ -1103,5 +1066,5 @@ window.onload = function(){
     }
     canvas.width = 800;
     canvas.height = 800;
-    drawGrid(context);
+    drawGrid();
 }
