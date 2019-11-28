@@ -115,7 +115,7 @@ class Triangle{
         let v1 = new Vector(ball.x + ball.scale * 20, ball.y + ball.scale * 20);
         let v2 = new Vector(closePoint.x, closePoint.y);
         axes.push(v1.substract(v2).normalize());
-        return this.separationOnAxes(axes, ball).axis === undefined;
+        return this.separationOnAxes(axes, ball).axis !== undefined;
     }
     separationOnAxes(axes, ball){
         let minOverlap = 10000;
@@ -212,7 +212,8 @@ class Square{
             let axis = axes[i];
             let projection1 = this.project(axis);
             let projection2 = ball.project(axis);
-            if(! projection1.overlaps(projection2)){
+            let overlap = projection1.overlaps(projection2);
+            if(overlap === 0){
                 return {axis: undefined, overlap: 0};
             }else{
                 if(overlap < minOverlap){
@@ -277,6 +278,7 @@ class Absorber{
         this.id = id;
         this.points = [];
         this.updatePoints();
+        this.scale = 1;
     }
     isScaleable(){
         return false;
@@ -346,6 +348,7 @@ class Ball{
         this.x = x;
         this.y = y;
         this.name = name;
+        this.scale = 1;
         this.id = id;
         this.vx = 0;
         this.vy = 0;
@@ -369,6 +372,7 @@ class Rail{
         this.y = y;
         this.name = name;
         this.id = id;
+        this.scale = 1;
         this.dir = 0;
         this.points = [];
         this.updatePoints();
@@ -451,6 +455,7 @@ class Curve{
         this.y = y;
         this.name = name;
         this.id = id;
+        this.scale = 1;
         this.dir = 0;
         this.points = [];
         this.updatePoints();
@@ -587,6 +592,7 @@ class LeftPaddle{
         this.y = y;
         this.name = name;
         this.id = id;
+        this.scale = 1;
         this.points = [];
         this.updatePoints();
     }
@@ -655,6 +661,7 @@ class RightPaddle{
         this.y = y;
         this.name = name;
         this.id = id;
+        this.scale = 1;
         this.points = [];
         this.updatePoints();
     }
@@ -763,7 +770,11 @@ class Projection{
         this.max = max;
     }
     overlaps(projection){
-        return this.max > projection.min && projection.max > this.min;
+        if(this.max > projection.min && projection.max > this.min){
+            return projection.min - this.min < 0 ? projection.max - this.min : this.max - projection.min;
+        }else{
+            return 0;
+        }
     }
 }
 let canvas = document.getElementById("canvas");
@@ -772,7 +783,7 @@ let componentList = new Array();
 let positionOccupied = new Array(400).fill(-1);
 let count = 0;
 let gravity = 2;
-var ball;
+let ball;
 function newObject(name, x, y){
     if(name == "triangle"){
         count++;
@@ -806,11 +817,11 @@ function newObject(name, x, y){
         let component = componentList.find(item => item.name === name);
         if(component !== undefined){
             positionOccupied[component.x/40*20+component.y/40] = -1;
-            context.clearRect(component.x, component.y, 40, 10);
-            drawGrid();
+            context.clearRect(0, 0, 800, 800);
             component.x = x;
             component.y = y;
             component.updatePoints();
+            rerender();
             return component;
         }else{
             count++;
@@ -821,11 +832,11 @@ function newObject(name, x, y){
         let component = componentList.find(item => item.name === name);
         if(component !== undefined){
             positionOccupied[component.x/40*20+component.y/40] = -1;
-            context.clearRect(component.x, component.y, 40, 10);
-            drawGrid();
+            context.clearRect(0, 0, 800, 800);
             component.x = x;
             component.y = y;
             component.updatePoints();
+            rerender();
             return component;
         }else{
             count++;
@@ -860,36 +871,30 @@ function addComponent(x, y, name){
     if(positionOccupied[x/40*20+y/40] !== -1)
         return;
     if(name === "ball" && ball !== undefined){
-        context.clearRect(ball.x, ball.y, 40, 40);
+        context.clearRect(0, 0, 800, 800);
         positionOccupied[ball.x/40*20 + ball.y/40] = -1;
-        drawGrid();
         ball.x = x;
         ball.y = y;
+        positionOccupied[x/40*20+y/40] = 0;
+        rerender();
+        return;
     }
-    let image = new Image();
-    if(name !== "paddle-left" && name !== "paddle-right"){
-        if(name === "triangle" || name === "rail" || name === "curve"){
-            image.src = "../img/" + name + "0.png";
-        }else{
-            image.src = "../img/" + name + ".png";
-        }
-        image.onload = function(){
-            context.drawImage(image, x, y, 40, 40);
-        }
-    }else{
-        image.src = "../img/paddle.png";
-        image.onload = function(){
-            context.drawImage(image, x, y, 40, 40);
-        }
-    }
-    if(name !== "ball"){
-        let obj = newObject(name, x, y);
-        console.log(obj);
-        componentList.push(obj);
-        positionOccupied[x/40*20+y/40] = obj.id;
-    }else{
+    if(name === "ball" && ball === undefined){
         ball = newObject(name, x, y);
         positionOccupied[x/40*20+y/40] = 0;
+    }else{
+        let obj = newObject(name, x, y);
+        componentList.push(obj);
+        positionOccupied[x/40*20+y/40] = obj.id;
+    }
+    let image = new Image();
+     if(name === "triangle" || name === "rail" || name === "curve"){
+        image.src = "../img/" + name + "0.png";
+    }else{
+        image.src = "../img/" + name + ".png";
+    }
+    image.onload = function(){
+        context.drawImage(image, x, y, 40, 40);
     }
 }
 function isComponent(name){
@@ -907,8 +912,7 @@ function getCurrentChecked(){
         }
     }
 }
-function rotate(x, y){
-    let id = positionOccupied[x/40*20+y/40];
+function rotate(id){
     if(id === -1 || id === 0){
         return;
     }
@@ -916,61 +920,30 @@ function rotate(x, y){
     if(!component.isRotatable()){
         return;
     }
-    if(component.scale === undefined){
-        context.clearRect(component.x, component.y, 40, 40);
-    }else{
-        context.clearRect(component.x, component.y, component.scale * 40, component.scale * 40);
-    }
+    context.clearRect(0, 0, 800, 800);
     component.rotate();
     rerender();
-    
-    // let image = new Image();
-    // image.src = "../img/" + component.name + component.dir + ".png";
-    // image.onload = function(){
-    //     if(component.scale === undefined){
-    //         context.drawImage(image, component.x, component.y, 40, 40);
-    //     }else{
-    //         context.drawImage(image, component.x, component.y, component.scale * 40, component.scale * 40); 
-    //     }
-    // }
 }
-function remove(x, y, id){
-    if(id == -1 || id != positionOccupied[x/40*20+y/40])
+function remove(id){
+    if(id === -1)
         return;
-    if(x < 0 || y < 0 || x >= 800 || y >= 800)
-        return;
-    context.clearRect(x, y, 40, 40);
-    positionOccupied[x/40*20+y/40]= -1;
+    if(id === 0){
+        positionOccupied[ball.x/40*20+ball.y/40] = -1;
+        ball = undefined;
+    }
+    context.clearRect(0, 0, 800, 800);
     for(var i=0;i<componentList.length;i++){
         if(componentList[i].id == id){
+            let component = componentList[i];
+            for(let j = component.x; j < component.x + component.scale * 40; j+= 40){
+                for(let k = component.y; k < component.y + component.scale * 40; k+= 40){
+                    positionOccupied[j/40*20+k/40] = -1;
+                }
+            }
             componentList.splice(i,1);
+            break;
         }
     }
-    remove(x+40, y-40, id)
-    remove(x+40, y, id);
-    remove(x+40, y+40, id);
-    remove(x-40, y-40, id);
-    remove(x-40, y, id);
-    remove(x-40, y+40, id);
-    remove(x, y+40, id);
-    remove(x, y-40, id);
-    rerender();
-}
-function fakeRemove(x, y, id){
-    if(id == -1 || id != positionOccupied[x/40*20+y/40])
-        return;
-    if(x < 0 || y < 0 || x >= 800 || y >= 800)
-        return;
-    context.clearRect(x, y, 40, 40);
-    positionOccupied[x/40*20+y/40]= -1;
-    fakeRemove(x+40, y-40, id)
-    fakeRemove(x+40, y, id);
-    fakeRemove(x+40, y+40, id);
-    fakeRemove(x-40, y-40, id);
-    fakeRemove(x-40, y, id);
-    fakeRemove(x-40, y+40, id);
-    fakeRemove(x, y+40, id);
-    fakeRemove(x, y-40, id);
     rerender();
 }
 function enlarge(id){
@@ -984,23 +957,33 @@ function enlarge(id){
     if(component.scale === 4){
         return; 
     }
-    fakeRemove(component.x, component.y, id);
+    context.clearRect(0, 0, 800, 800);
+    let old_scale = component.scale;
     component.scale ++;
-    let image = new Image();
-    let name = component.name;
-    if(component.isRotatable()){
-        image.src = "../img/" + name + component.dir + ".png";
-    }else{
-        image.src = "../img/" + name + ".png";
-    }
-    image.onload = function(){
-        context.drawImage(image, component.x, component.y, 40 * component.scale, 40 * component.scale);
-    }
-    for(let i=component.x;i<component.x+component.scale*40 && i < 800;i+=40){
-        for(let j=component.y;j<component.y+component.scale*40 && j < 800;j+=40){
-            positionOccupied[i/40*20+j/40] = id;
+    let flag = true;
+    for(let i=component.x;i<component.x+component.scale*40;i+=40){
+        for(let j=component.y;j<component.y+component.scale*40;j+=40){
+            if(i < component.x + old_scale * 40 && j < component.y + old_scale * 40){
+                continue;
+            }
+            if(i >= 800 || j >= 800){
+                flag = false;
+            }
+            if(positionOccupied[i/40*20+j/40] != -1){
+                flag = false;
+            }
         }
     }
+    if(!flag){
+        component.scale --;
+    }else{
+        for(let i=component.x;i<component.x+component.scale*40;i+=40){
+            for(let j=component.y;j<component.y+component.scale*40;j+=40){
+                positionOccupied[i/40*20+j/40] = id;
+            }
+        }
+    }
+    rerender();
 }
 function shrink(id){
     if(id === 0 || id === -1){
@@ -1013,23 +996,19 @@ function shrink(id){
     if(component.scale === 1){
         return;
     }
-    fakeRemove(component.x, component.y, id);
+    context.clearRect(0, 0, 800, 800);
+    let old_scale = component.scale;
     component.scale --;
-    let image = new Image();
-    let name = component.name;
-    if(component.isRotatable()){
-        image.src = "../img/" + name + component.dir + ".png";
-    }else{
-        image.src = "../img/" + name + ".png";
-    }
-    image.onload = function(){
-        context.drawImage(image, component.x, component.y, 40 * component.scale, 40 * component.scale);
-    }
-    for(let i=component.x;i<component.x+component.scale*40 && i < 800;i+=40){
-        for(let j=component.y;j<component.y+component.scale*40 && j < 800;j+=40){
-            positionOccupied[i/40*20+j/40] = id;
+    for(let i=component.x;i<component.x+old_scale*40;i+=40){
+        for(let j=component.y;j<component.y+old_scale*40;j+=40){
+            if(i < component.x + component.scale * 40 && j < component.y + component.scale * 40){
+                positionOccupied[i/40*20+j/40] = id;
+            }else{
+                positionOccupied[i/40*20+j/40] = -1;
+            }
         }
     }
+    rerender();
 }
 function update(ball){
     ball.x += ball.vx;
@@ -1041,15 +1020,11 @@ function rerender(){
     for(let i = 0; i < componentList.length; i++){
         let image = new Image();
         let name = componentList[i].name;
-        if(name === "paddle-left" || name === "paddle-right"){
-            image.src = "../img/paddle.png";
-        }
-        else if(componentList[i].isRotatable()){
+        if(componentList[i].isRotatable()){
             image.src = "../img/" + name + componentList[i].dir + ".png";
         }else{
             image.src = "../img/" + name + ".png";
         }
-        console.log(image.src);
         let x = componentList[i].x;
         let y = componentList[i].y;
         image.onload = function(){
@@ -1058,6 +1033,13 @@ function rerender(){
             }else{
                 context.drawImage(image, x, y, 40, 40);
             }
+        }
+    }
+    if(ball !== undefined){
+        let image = new Image();
+        image.src = "../img/ball.png";
+        image.onload = function(){
+            context.drawImage(image, ball.x, ball.y, 40, 40);
         }
     }
 }
@@ -1109,9 +1091,9 @@ window.onload = function(){
             addComponent(x, y, name);
         }else{
             if(name == "rotation"){
-                rotate(x, y);
+                rotate(id);
             }else if(name == "delete"){
-                remove(x, y, id);
+                remove(id);
             }else if(name == "plus"){
                 enlarge(id);
             }else if(name == "minus"){
@@ -1122,5 +1104,4 @@ window.onload = function(){
     canvas.width = 800;
     canvas.height = 800;
     drawGrid(context);
-    
 }
